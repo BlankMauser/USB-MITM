@@ -78,7 +78,7 @@ namespace ams::mitm::usb::sysmodule_patch
             appears to always be the main text region */
         while (
             (UsbMemInfo.state != ams::svc::MemoryState_Code)
-                && (UsbMemInfo.permission != ams::svc::MemoryPermission_ReadExecute)
+                || (UsbMemInfo.permission != ams::svc::MemoryPermission_ReadExecute)
         )
         {
             AMS_ASSERT(UsbMemInfo.base_address != 0, "Looped memory space searching for code");

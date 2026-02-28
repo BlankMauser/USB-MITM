@@ -206,7 +206,7 @@ Result usbHsQueryAllInterfacesFwd(Service *s, const UsbHsInterfaceFilter *filter
     s32 tmp = 0;
     Result rc = serviceDispatchInOut(s, 1, *filter, tmp,
                                      .buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
-                                     .buffers = {{out, sizeof(UsbHsInterfaceInfo) * count}});
+                                     .buffers = {{out, sizeof(UsbHsInterface) * count}});
     if (R_SUCCEEDED(rc) && total_out != NULL)
     {
         *total_out = tmp;
@@ -219,7 +219,7 @@ Result usbHsQueryAvailableInterfacesFwd(Service *s, const UsbHsInterfaceFilter *
     s32 tmp = 0;
     Result rc = serviceDispatchInOut(s, 2, *filter, tmp,
                                      .buffer_attrs = {SfBufferAttr_HipcMapAlias | SfBufferAttr_Out},
-                                     .buffers = {{out, sizeof(UsbHsInterfaceInfo) * count}});
+                                     .buffers = {{out, sizeof(UsbHsInterface) * count}});
     if (R_SUCCEEDED(rc) && total_out != NULL)
     {
         *total_out = tmp;

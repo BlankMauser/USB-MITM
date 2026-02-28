@@ -239,7 +239,8 @@ namespace ams::mitm::usb
     Result UsbMitmService::AcquireUsbIf(const sf::OutMapAliasBuffer &out1, const sf::OutMapAliasBuffer &out2, sf::Out<sf::SharedPointer<::ams::usb::IClientIfSession>> out_session, u32 interfaceId)
     {
         DEBUG("UsbMitmService::AcquireUsbIf()\n");
-        UsbHsInterface QueryInterfaces[4];
+        constexpr s32 QueryInterfaceCapacity = 4;
+        UsbHsInterface QueryInterfaces[QueryInterfaceCapacity] = {};
 
         s32 NumOut;
 
@@ -247,7 +248,7 @@ namespace ams::mitm::usb
             m_forward_service.get(),
             &GameCubeFilter,
             QueryInterfaces,
-            4,
+            QueryInterfaceCapacity,
             &NumOut
         );
 
@@ -257,16 +258,23 @@ namespace ams::mitm::usb
             return sm::mitm::ResultShouldForwardToSession();
         }
 
-        bool IsAcquiringGameCubeAdapter = false;
-        s32 i = 0;
-        for (; i < NumOut; i++) {
-            if (QueryInterfaces[i].inf.ID == (s32)interfaceId) {
-                IsAcquiringGameCubeAdapter = true;
+        const s32 NumToScan = NumOut > QueryInterfaceCapacity ? QueryInterfaceCapacity : NumOut;
+        if (NumOut > QueryInterfaceCapacity)
+        {
+            DEBUG("\tGameCube query returned %d entries, truncating scan to %d\n", NumOut, QueryInterfaceCapacity);
+        }
+
+        s32 AdapterQueryIndex = -1;
+        for (s32 i = 0; i < NumToScan; i++)
+        {
+            if (QueryInterfaces[i].inf.ID == static_cast<s32>(interfaceId))
+            {
+                AdapterQueryIndex = i;
                 break;
             }
         }
 
-        if (!IsAcquiringGameCubeAdapter)
+        if (AdapterQueryIndex < 0)
         {
             DEBUG("\tClient did not attempt to acquire GameCube Adapter, forwarding request to usb:hs service\n");
             return sm::mitm::ResultShouldForwardToSession();
@@ -286,7 +294,7 @@ namespace ams::mitm::usb
         if (R_SUCCEEDED(res))
         {
             DEBUG("\tSuccessfully acquired the GameCube Adapter via usb:hs:a service, sending device to driver thread\n");
-            ::usb::gc::ProxyInterface proxy = ::usb::gc::OpenInterface(mClientProcess, IfSession, &QueryInterfaces[i]);
+            ::usb::gc::ProxyInterface proxy = ::usb::gc::OpenInterface(mClientProcess, IfSession, &QueryInterfaces[AdapterQueryIndex]);
             out_session.SetValue(sf::ObjectFactory<sf::ExpHeapAllocator::Policy>::CreateSharedEmplaced<ams::usb::IClientIfSession, UsbMitmIfSession>(std::addressof(g_SfAllocator), mClientProcess, proxy));
             R_SUCCEED();
         }
